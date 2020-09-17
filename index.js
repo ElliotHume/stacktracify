@@ -3,8 +3,8 @@
 const meow = require('meow');
 const stackTraceParser = require('stacktrace-parser');
 const fs = require('fs-extra');
-const {basename, join, resolve} = require('path');
-const {lstat} = require('fs').promises;
+const { basename, join, resolve } = require('path');
+const { lstat } = require('fs').promises;
 const clipboardy = require('clipboardy');
 const { SourceMapConsumer } = require('source-map');
 
@@ -34,20 +34,24 @@ function formatStackFrame(frame, decoration = null) {
     }
     parts.push(')');
   }
-  
+
   return parts.join('');
 }
 
 class SourceMapRegistry {
-  // Map of "basename" -> "fullpath"
-  sourceMapFiles = new Map();
-  // Map of "basename" -> "source map consumer for source map file"
-  sourceMaps = new Map();
+
+  constructor() {
+    // Map of "basename" -> "fullpath"
+    this.sourceMapFiles = new Map()
+
+    // Map of "basename" -> "source map consumer for source map file"
+    this.sourceMaps = new Map()
+  }
 
   async getSourceMapConsumer(path) {
     const key = basename(path) + '.map';
     const fullPath = this.sourceMapFiles.get(key);
-    
+
     let smc = this.sourceMaps.get(key);
     if (!smc && fullPath) {
       // Acquire smc
@@ -87,25 +91,25 @@ class SourceMapRegistry {
 
     // Loop through the results, possibly recurse
     for (const item of items) {
-        try {
-            const fullPath = join(folder, item)
+      try {
+        const fullPath = join(folder, item)
 
-            if (
-                fs.statSync(fullPath).isDirectory()) {
+        if (
+          fs.statSync(fullPath).isDirectory()) {
 
-                // Its a folder, recursively get the child folders' files
-                results.push(
-                    ...(await this.findFiles(fullPath))
-                )
-            } else {
-                // Filter by the file name pattern, if there is one
-                if (item.search(new RegExp('.*\.js\.map', 'i')) > -1) {
-                    results.push(resolve(fullPath))
-                }
-            }
-        } catch (error) {
-            // Ignore!
+          // Its a folder, recursively get the child folders' files
+          results.push(
+            ...(await this.findFiles(fullPath))
+          )
+        } else {
+          // Filter by the file name pattern, if there is one
+          if (item.search(new RegExp('.*\.js\.map', 'i')) > -1) {
+            results.push(resolve(fullPath))
+          }
         }
+      } catch (error) {
+        // Ignore!
+      }
     }
 
     return results
@@ -161,6 +165,11 @@ var { file, debug, legend } = cli.flags;
       str = await clipboardy.read();
     }
 
+    // If stacktrace is a single line, insert line breaks so that stackTraceParser can understand it.
+    if (!str.includes('\n')) {
+      str = str.split(' at ').join('\n  at ')
+    }
+
     // Parse stacktrace
     const stack = stackTraceParser.parse(str);
     if (stack.length === 0) throw new Error('No stack found');
@@ -170,7 +179,7 @@ var { file, debug, legend } = cli.flags;
     if (header && !header.includes(stack[0].file)) {
       console.log(header);
     }
-  
+
     // Translate stacktrace
     const warnings = [];
     for (const each of stack) {
@@ -192,7 +201,7 @@ var { file, debug, legend } = cli.flags;
             console.log(`    ${formatStackFrame(each, legend && WARNINGS.noSmc)}`);
             warnings.push(WARNINGS.noSmc);
           }
-  
+
         }
       } catch (err) {
         console.log(`    at FAILED_TO_PARSE_LINE`, err);

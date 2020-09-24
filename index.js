@@ -165,10 +165,19 @@ var { file, debug, legend } = cli.flags;
       str = await clipboardy.read();
     }
 
+    str = str.trim()
+
     // If stacktrace is a single line, insert line breaks so that stackTraceParser can understand it.
     if (!str.includes('\n')) {
-      str = str.split(' at ').join('\n  at ')
+      // Chrome stacktrace
+      if (str.includes(' at ')) {
+        str = str.split(' at ').join('\n  at ')
+      } else if (str.includes('@')) {
+        str = str.split(/([a-zA-Z]+@(?:\[[^\]]+\]|[^ ])+)/).map(x => x.trim()).filter(x => x).join('\n')
+      }
     }
+
+    console.log(str)
 
     // Parse stacktrace
     const stack = stackTraceParser.parse(str);

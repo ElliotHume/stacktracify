@@ -176,6 +176,8 @@ var { file, debug, legend } = cli.flags;
         str = str.split(/([a-zA-Z]+@(?:\[[^\]]+\]|[^ ])+)/).map(x => x.trim()).filter(x => x).join('\n')
       }
     }
+    // If a newline is immediately followed by an exclamation point, strip the exclamation point (can occur in errors from cloud logging services)
+    str.replace('\n!', '\n')
 
     console.log(str)
 

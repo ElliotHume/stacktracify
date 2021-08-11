@@ -179,6 +179,7 @@ var { file, debug, legend } = cli.flags;
     // If a newline is immediately followed by an exclamation point, strip the exclamation point (can occur in errors from cloud logging services)
     str.replaceAll('\n!', '\n')
 
+
     console.log(str)
 
     // Parse stacktrace
